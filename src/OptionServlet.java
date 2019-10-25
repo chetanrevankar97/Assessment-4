@@ -9,6 +9,15 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.bson.Document;
+
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 
 /**
  * Servlet implementation class OptionServlet
@@ -30,7 +39,7 @@ public class OptionServlet extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+		//response.getWriter().append("Served at: ").append(request.getContextPath());
 	}
 
 	/**
@@ -43,9 +52,29 @@ public class OptionServlet extends HttpServlet {
 		//List<Library> dataList = new LinkedList<>();
 		//switch(btn){
 		//case "JO":
-			response.sendRedirect("form.jsp");
+			//reques
+			//response.sendRedirect("form.jsp");
 			//break;
 		//}
+		HttpSession session=request.getSession();
+		session.setAttribute("category", btn);
+		MongoClient connection = AdManager.getMongo();
+		MongoDatabase db = AdManager.getDb("zips");
+		MongoCollection<Document> collection = db.getCollection("Assessment4");
+		List<Ad> dataList = new LinkedList<>();
+		//HttpSession session=request.getSession();
+		String category=(String) session.getAttribute("category");
+		MongoCursor<Document> cursor = collection.find(Filters.eq("Category",category)).iterator();
+		while (cursor.hasNext()) {
+			Document d = (Document) cursor.next();
+
+			Ad l = new Ad(d.getString("posting"),d.getString("city"),d.getString("postal"),d.getString("desc"),d.getString("phone"),d.getString("email"));
+			dataList.add(l);
+		}
+	
+		
+		session.setAttribute("list", dataList);
+		request.getRequestDispatcher("FormServlet").forward(request, response);
 	}
 
 }
