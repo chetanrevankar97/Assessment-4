@@ -9,6 +9,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.bson.Document;
 
@@ -16,6 +17,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 
 /**
  * Servlet implementation class FormServlet
@@ -40,22 +42,22 @@ public class FormServlet extends HttpServlet {
 		//response.getWriter().append("Served at: ").append(request.getContextPath());
 		MongoClient connection = AdManager.getMongo();
 		MongoDatabase db = AdManager.getDb("zips");
-		MongoCollection<Document> collection = db.getCollection("AdWeb");
+		MongoCollection<Document> collection = db.getCollection("Assessment4");
 		List<Ad> dataList = new LinkedList<>();
-		
-		
-		MongoCursor<Document> cursor = collection.find().iterator();
+		HttpSession session=request.getSession();
+		String category=(String) session.getAttribute("category");
+		MongoCursor<Document> cursor = collection.find(Filters.eq("Category",category)).iterator();
 		while (cursor.hasNext()) {
 			Document d = (Document) cursor.next();
 
 			Ad l = new Ad(d.getString("posting"),d.getString("city"),d.getString("postal"),d.getString("desc"),d.getString("phone"),d.getString("email"));
 			dataList.add(l);
 		}
-
-		//ConnectionManager.close();
+	
 		
-		request.setAttribute("list", dataList);
-		request.getRequestDispatcher("form.jsp").forward(request, response);
+		session.setAttribute("list", dataList);
+		
+		
 	}
 
 	/**
@@ -66,13 +68,15 @@ public class FormServlet extends HttpServlet {
 		//doGet(request, response);
 		MongoClient connection = AdManager.getMongo();
 		MongoDatabase db = AdManager.getDb("zips");
-		MongoCollection<Document> collection = db.getCollection("AdWeb");
-		List<Ad> dataList = new LinkedList<>();
-		String btn=request.getParameter("abcd");
+		MongoCollection<Document> collection = db.getCollection("Assessment4");
 		
-		switch(btn){
-		case "continue":
-			if(request.getParameter("posting")!=null && request.getParameter("city")!=null && request.getParameter("postal")!=null &&request.getParameter("desc")!=null && request.getParameter("phone")!=null &&request.getParameter("email")!=null){
+		
+		
+		
+			if(request.getParameter("posting")!=null && request.getParameter("city")!=null && request.getParameter("postal")!=null &&request.getParameter("desc")!=null && request.getParameter("phone")!=null &&request.getParameter("email")!=null)
+			{List<Ad> dataList = new LinkedList<>();
+				HttpSession session=request.getSession();
+				String category=(String) session.getAttribute("category");
 		String posting=request.getParameter("posting");
 		String city=request.getParameter("city");
 		String postal=request.getParameter("postal");
@@ -80,10 +84,10 @@ public class FormServlet extends HttpServlet {
 		String phone=request.getParameter("phone");
 		String email=request.getParameter("email");
 		
-		Document document1 = new Document("posting",posting).append("city",city).append("postal", postal).append("desc",desc).append("phone",phone).append("email",email);
+		Document document1 = new Document("posting",posting).append("city",city).append("postal", postal).append("desc",desc).append("phone",phone).append("email",email).append("Category", category);
 		collection.insertOne(document1);
 		
-		MongoCursor<Document> cursor = collection.find().iterator();
+		MongoCursor<Document> cursor = collection.find(Filters.eq("Category",category)).iterator();
 		while (cursor.hasNext()) {
 			Document d = (Document) cursor.next();
 
@@ -95,13 +99,7 @@ public class FormServlet extends HttpServlet {
 		
 		request.setAttribute("list", dataList);
 			}
-		break;
-			
-		case "reply":
-			
-			response.sendRedirect("user.jsp");
-			break;
-		}
+		
 		request.getRequestDispatcher("form.jsp").forward(request, response);
 		
 	}
